@@ -1,0 +1,13 @@
+*.lst
+
+*.cof
+
+*.dbg
+
+*.hex
+
+*.mp
+
+*.lis
+
+*.o
