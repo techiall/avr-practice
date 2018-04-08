@@ -4,77 +4,82 @@ imakew -f FIRST.mak
 #include <iom16v.h>
 #include <macros.h>
 
-#define ARRAY_SIZE_UNSAFE(ARR) (sizeof((ARR)) / sizeof(*(ARR)))
-
-const char step_out[] = {
-//       45    90   135   180   -135   -90  -45,  0
-	0x02, 0x06, 0x04, 0x0C, 0x08, 0x09, 0x01, 0x03,
-//       0     2     3     4      5     6     7    8
+const unsigned char led[] = {
+        0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07,
+        0x7F, 0x6F, 0x77, 0x7C, 0x39, 0x5E, 0x79, 0x71
 };
-
-const char step_index[] = {
-//      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
-	-1, 6, 0, 7, 2, -1, 1, -1, 4, 5,  -1,  -1, 3,
-};
-
-void delay(unsigned int time)
-{
-	int i = 0;
-	while (time--) {
-		for (i = 0; i < 100; i++);
-	}
-}
 
 void init(void)
 {
-	DDRB = 0x7F;
-	PORTB = 0x00;
+	CLI();
+	PORTA = 0x01;
+	DDRA  = 0x01;
+	
+	PORTB = 0x03;
+	DDRB  = 0x03;
+	
+	PORTD = 0xF0;
+	DDRD  = 0xF0;
 
-	DDRC = 0x00;
+	TCCR0 = 0x00;
+	TCNT0 = 0x83;
+	OCR0  = 0x7D;
+	TCCR0 = 0x0B;
 
-	DDRD = 0x00; 
-	PORTD = 0x0F;
+	MCUCR = 0x00;
+	GICR  = 0x00;
+	TIMSK = 0x02; 
+	SEI();
 }
 
-void turn45(char direct)
+unsigned int i = 0;
+unsigned char flag = 0, light = 0;
+
+#pragma interrupt_handler timer0_comp_isr:iv_TIM0_COMP
+void timer0_comp_isr(void)
 {
-	char next = (step_index[PORTB] + direct + ARRAY_SIZE_UNSAFE(step_out)) % ARRAY_SIZE_UNSAFE(step_out);
-	PORTB = step_out[next];
+	i = (i + 1) % 101;
+	flag = i == 100 ? 1 : flag;
+	light = i % 2 ? light : 1;
 }
 
-int main(void)
+void send_data(unsigned char data)
 {
-	unsigned char direct = 0;
-	unsigned char turn_cnt = 0;
+	int j = 0;
+	for (j = 7; j >= 0; j--) {
+		PORTA = data & (1 << j) ? PORTA | (1 << 0) : PORTA & ~(1 << 0);
+		PORTB |= (1 << 1);
+		PORTB &= ~(1 << 1);
+	}
+	PORTB |= (1 << 0);
+	PORTB &= ~(1 << 0);
+}
+
+void main(void)
+{
+	unsigned int num = 0;
+	unsigned int time[4] = {0};
+	char k = 0;
+	int tmp = 0;
+	
 	init();
-	while (1) {
-		int i = 0;
-		int btn = ~PIND & 7;
-
-		if (btn) {
-			DDRC = 1 << 2;
-			direct = 0;	
-			turn_cnt = 0;
-			while (~PIND & 7);
-
-			DDRC = btn;
-			if (btn == 1 << 0) {
-				direct = 1;
-			} else if (btn == 1 << 1) {
-				direct = -1;
+	while(1) {
+		if(flag) {
+			flag = 0;
+			if (++num % 100 >= 60) {
+				num = (num + 100) % 10000;
+				num -= num % 100;
 			}
-			if (direct)
-				turn_cnt = 3 * ARRAY_SIZE_UNSAFE(step_out);
+			for (tmp = num, k = 0; k < 4; k++, tmp /= 10)
+				time[4 - 1 - k] = tmp % 10;
+		}
+		for(k = 0; k < 4; k++) {
+			send_data(~led[time[k]]);
+			PORTD &= ~(1 << (7 - k));
+			while(!light);
+			light = 0;
+			PORTD |= (1 << (7 - k));
 		}
 
-		if (direct && turn_cnt) {
-			turn45(direct);
-			delay(200);
-			turn_cnt--;
-		} else {
-			DDRC = 1 << 2;
-		}	
 	}
-	
-	return 0;
 }
