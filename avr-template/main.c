@@ -34,23 +34,19 @@ void init(void)
 
 	DDRC = 0x00;
 	PORTC = 0x00;
-
-	DDRD &= ~(1 << 3);
-	PORTD |= (1 << 3);
 }
 
 int main(void)
 {
-	int number = 0;
+	int num = 0;
 	init();
 	while (1) {
-		set_number(number, 4);
-		if (!(PIND & (1 << 3)))  {
-			while (!(PIND & (1 << 3))) {
-				set_number(number, 4);	
-			}
-			number++;
-		}
+		int i;
+		if (++num % 100 == 60)
+			num += 40;
+		num %= 6000;
+		for (i = 0; i < 6; i++) 
+			set_number(num, 4);
 	}
 	return 0;
 }
