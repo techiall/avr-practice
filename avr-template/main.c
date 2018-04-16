@@ -33,14 +33,14 @@ enum KEY_STATE {
 	NONE, DOWN, PRESS, LONG_PRESS, KEY_STATE_NUM,
 };
 
-struct key_state {
+struct key {
 	int state;
 	unsigned long press_time;
 	int (*is_down)(void);
-	int (*operate[KEY_STATE_NUM])(double *array, int num);
+	int (*operate[KEY_STATE_NUM])(void *first, void *last);
 };
 
-struct key_state key_state_move(struct key_state cur_state, int key_down)
+struct key key_state_move(struct key cur_key, int key_down)
 {
 	static int move[KEY_STATE_NUM][2] = {
 		NONE, DOWN,
@@ -49,18 +49,18 @@ struct key_state key_state_move(struct key_state cur_state, int key_down)
 		NONE, PRESS,
 	};
 
-	if (cur_state.state == PRESS) {
-		if (time - cur_state.press_time >= 1 * TIME_1S)
-			cur_state.state = move[cur_state.state][key_down];
+	if (cur_key.state == PRESS) {
+		if (time - cur_key.press_time >= 1 * TIME_1S)
+			cur_key.state = move[cur_key.state][key_down];
 	} else {
-		if (cur_state.state == DOWN)
-			cur_state.press_time = time;
-		else if (cur_state.state == LONG_PRESS)
-			cur_state.press_time = time - TIME_1S / 2;
-		cur_state.state = move[cur_state.state][key_down];
+		if (cur_key.state == DOWN)
+			cur_key.press_time = time;
+		else if (cur_key.state == LONG_PRESS)
+			cur_key.press_time = time - TIME_1S / 2;
+		cur_key.state = move[cur_key.state][key_down];
 	}	
 
-	return cur_state;	
+	return cur_key;	
 }
 
 void init_devices(void)
@@ -78,46 +78,61 @@ void init_devices(void)
 void display_digit(int pos, unsigned char digit)
 {
 	static const unsigned char led[] = {
-		0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07,
-		0x7F, 0x6F, 0x77, 0x7C, 0x39, 0x5E, 0x79, 0x71
+		0x3F, 0x06, 0x5B, 0x4F, 0x66,
+	       	0x6D, 0x7D, 0x07, 0x7F, 0x6F,
+	       	0x40, 0x77, 0x7C, 0x39, 0x5E, 0x79, 0x71,
 	};
 	PORTC = ~(1 << pos);
 	PORTA = led[digit];
 }
 
-void display_number(unsigned long number, unsigned char digit, unsigned char mask)
+void display_number(long number, unsigned char digit, unsigned char mask)
 {
 	char i;
+
+	if (number < 0) {
+		digit--;
+		display_digit(digit, 10);
+	}
+
 	for (i = 0; i < digit; i++, number /= 10) {
 		if (mask & (1 << i))
 			continue;
-		display_digit(i, number % 10);
+		display_digit(i, abs(number % 10));
 	}
 }
 
-int _1(void)
-{ return (~PINC & 0xc0) == (1 << 6); }
+int key_is_down(char *keys)
+{
+	int and = 0;
+	for (; *keys; keys++)
+		and |= 1 << (*keys - '0');
+	return (~PINC & 0xc0) == (and << 5);
+}
 
-int __1(double *aruray, int num)
+int _1(void)
+{ return key_is_down("2"); }
+
+int __1(void *first, void *last)
 { return 1; }
 
 int _2(void)
-{ return (~PINC & 0xc0) == (1 << 7); }
+{ return key_is_down("1"); }
 
-int __2(double *aruray, int num)
-{ return 1; }
+int __2(void *first, void *last)
+{ return -1; }
 
 int _3(void)
-{ return (~PINC & 0xc0) == (1 << 7 | 1 << 6); }
+{ return key_is_down("12"); }
 
-int __3(double *array, int num)
+int __3(void *first, void *last)
 { return 1000; }
 
 int main(void)
 {
 	unsigned char len = 6;
-	unsigned long num = 0;
-	struct key_state key[3] = {
+	long num = 0;
+	struct key key[3] = {
 		{0, 0, _1, {0, __1, 0, __1}},
 		{0, 0, _2, {0, __2, 0, __2}},
 		{0, 0, _3, {0, __3, 0, __3}},
