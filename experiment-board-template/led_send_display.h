@@ -32,7 +32,7 @@ void display_number(long number, unsigned char digit,
 	if (number < 0) {
 		digit--;
 		display_digit(digit, 10, time);
-	} 
+	}
 
 	for (i = 0; i < digit; i++, number /= 10) {
 		if (mask & (1 << i))

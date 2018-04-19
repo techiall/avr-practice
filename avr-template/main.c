@@ -3,10 +3,13 @@ imakew -f FIRST.mak
 */
 #include <iom16v.h>
 #include <macros.h>
+#include <math.h>
 #include "init_avr.h"
 #include "led_send_display.h"
 #include "key.h"
 
+#define TIME_1S 100
+unsigned long time = 0;
 
 #pragma interrupt_handler timer0_comp_isr:iv_TIM0_COMP
 void timer0_comp_isr(void)
@@ -14,28 +17,65 @@ void timer0_comp_isr(void)
 	time++;
 }
 
-int __1(void *firs, void *last) { return 1; }
-int __2(void *firs, void *last) { return -1; }
+int _1(void *first, void *last)
+{
+	long *num = first;
+	unsigned char *x = last;
+	if (*x == 3) {
+		++*num;
+		*num = *num / 100 * 100 + *num % 100 % 60;
+	} else if (*x == (3 << 2)) {
+		*num += 100;
+		*num = *num / 100 % 60 * 100 + *num % 100;
+	}
+	return 0;
+}
+
+int mask_move(void *first, void *last)
+{
+	unsigned char *x = last;
+	*x <<= 2;
+	if (*x == (3 << (2 + 1) * 2))
+		*x = 3;
+	return 0;
+}
 
 int main(void)
 {
 	long num = 0;
-	unsigned char mask = 0;
+	unsigned char MASK = 0;
+	unsigned char mask = (3 << 2 * 2);
 	unsigned char len = 4;
-	struct key key[2];
 	int i;
+	struct key key[2];
 	unsigned char key_num = sizeof(key) / sizeof(*key);
-	key[0] = key_init(&PINA, 0x80, ~(1 << 7), 0, 0, __1, 0, __1);
-	key[1] = key_init(&PIND, 0x08, ~(1 << 3), 0, 0, __2, 0, __2);
+	key[0] = key_init(&PINA, 0x80, ~(1 << 7), 0, 0, mask_move, 0, mask_move);
+	key[1] = key_init(&PIND, 0x08, ~(1 << 3), 0, 0, _1, 0, _1);
 
 	init();
 	while(1) {
-		for (i = 0; i < key_num; i++) {
-			key[i] = key_state_move(key[i]);
-			num += key_operate(key[i], 0, 0);
-			display_number(num, len, mask, &time);
+		if (time >= TIME_1S / 2) {
+			MASK = mask == MASK ? 0 : mask;
 		}
-		display_number(num, len, mask, &time);
+		if (time >= TIME_1S) {
+			if (mask == (3 << 2 * 2))
+				num++;
+			time = 0;
+		}
+
+		if (num % 100 >= 60)
+			num += 40;
+		num %= 6000;
+		
+		for (i = 0; i < key_num; i++) {
+			if (key_is_down(key[i])) {
+				key[i] = key_state_move(key[i], &time);
+				key_operate(key[i], &num, &mask);
+				display_number(num, len, mask ^ MASK, &time);
+			}
+		}
+		display_number(num, len, mask ^ MASK, &time);
 	}
+
 	return 0;
 }

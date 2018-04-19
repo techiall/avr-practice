@@ -1,6 +1,3 @@
-extern unsigned long time = 0;
-#define TIME_1S 100
-
 enum KEY_STATE {
 	NONE, DOWN, PRESS, LONG_PRESS, KEY_STATE_NUM,
 };
@@ -53,7 +50,8 @@ int key_operate(struct key key, void *first, void *last)
 	return 0;
 }
 
-struct key key_state_move(struct key cur_key)
+#define TIME_SUM 100
+struct key key_state_move(struct key cur_key, unsigned long *time)
 {
 	int move[KEY_STATE_NUM][2] = {
 		NONE, DOWN,
@@ -64,15 +62,15 @@ struct key key_state_move(struct key cur_key)
 	int key_down = key_is_down(cur_key);
 
 	if (cur_key.state == PRESS) {
-		if (time - cur_key.press_time >= 1 * TIME_1S / 5)
+		if (*time - cur_key.press_time >= TIME_SUM)
 			cur_key.state = move[cur_key.state][key_down];
 	} else {
 		if (cur_key.state == DOWN)
-			cur_key.press_time = time;
+			cur_key.press_time = *time;
 		else if (cur_key.state == LONG_PRESS)
-			cur_key.press_time = time - TIME_1S / 2;
+			cur_key.press_time = *time - TIME_SUM / 2;
 		cur_key.state = move[cur_key.state][key_down];
-	}	
+	}
 
-	return cur_key;	
+	return cur_key;
 }
