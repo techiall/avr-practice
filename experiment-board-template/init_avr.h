@@ -1,3 +1,6 @@
+#ifndef _INIT_AVR_H_
+#define _INIT_AVR_H_
+
 void init(void)
 {
 	CLI();
@@ -20,3 +23,5 @@ void init(void)
 	TIMSK = 0x02;
 	SEI();
 }
+
+#endif /* _INIT_AVR_H_ */

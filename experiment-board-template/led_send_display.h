@@ -1,3 +1,8 @@
+#ifndef _LED_DISPLAY_H_
+#define _LED_DISPLAY_H_
+
+#include "define.h"
+
 void send_data(unsigned char data)
 {
 	int j = 0;
@@ -19,6 +24,7 @@ void display_digit(char pos, char digit, unsigned long *time)
 	};
 	static unsigned char size = sizeof(led) / sizeof(*led);
 	int t = *time;
+
 	send_data(~led[digit]);
 	PORTD &= ~(1 << (4 + pos));
 	while (t == *time);
@@ -29,6 +35,7 @@ void display_number(long number, unsigned char digit,
 			 unsigned char mask, unsigned long *time)
 {
 	int i;
+	
 	if (number < 0) {
 		digit--;
 		display_digit(digit, 10, time);
@@ -40,3 +47,5 @@ void display_number(long number, unsigned char digit,
 		display_digit(i, abs(number % 10), time);
 	}
 }
+
+#endif /* _LED_DISPLAY_H_ */
