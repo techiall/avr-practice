@@ -4,17 +4,34 @@ imakew -f FIRST.mak
 #include <iom16v.h>
 #include <macros.h>
 #include <math.h>
-#include "init_avr.h"
+#include "define.h"
 #include "led_send_display.h"
 #include "key.h"
+#include "init_avr.h"
 
-#define TIME_1S 100
 unsigned long time = 0;
+long num = 0;
+unsigned char MASK = 0;
+unsigned char mask = (3 << 2 * 2);
 
 #pragma interrupt_handler timer0_comp_isr:iv_TIM0_COMP
 void timer0_comp_isr(void)
 {
 	time++;
+
+	if (time >= TIME_1S / 2) {
+			MASK = mask == MASK ? 0 : mask;
+		}
+	if (time >= TIME_1S) {
+		if (mask == (3 << 2 * 2))
+			num++;
+		time = 0;
+	}
+
+	if (num % 100 >= 60)
+		num += 40;
+	num %= 6000;
+
 }
 
 int _1(void *first, void *last)
@@ -42,10 +59,6 @@ int mask_move(void *first, void *last)
 
 int main(void)
 {
-	long num = 0;
-	unsigned char MASK = 0;
-	unsigned char mask = (3 << 2 * 2);
-	unsigned char len = 4;
 	int i;
 	struct key key[2];
 	unsigned char key_num = sizeof(key) / sizeof(*key);
@@ -54,27 +67,14 @@ int main(void)
 
 	init();
 	while(1) {
-		if (time >= TIME_1S / 2) {
-			MASK = mask == MASK ? 0 : mask;
-		}
-		if (time >= TIME_1S) {
-			if (mask == (3 << 2 * 2))
-				num++;
-			time = 0;
-		}
-
-		if (num % 100 >= 60)
-			num += 40;
-		num %= 6000;
-		
+		display_number(num, 4, mask ^ MASK, &time);
 		for (i = 0; i < key_num; i++) {
 			if (key_is_down(key[i])) {
 				key[i] = key_state_move(key[i], &time);
 				key_operate(key[i], &num, &mask);
-				display_number(num, len, mask ^ MASK, &time);
 			}
+			 display_number(num, 4, mask ^ MASK, &time);
 		}
-		display_number(num, len, mask ^ MASK, &time);
 	}
 
 	return 0;
