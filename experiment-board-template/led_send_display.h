@@ -23,7 +23,7 @@ void display_digit(char pos, char digit, unsigned long *time)
 	       	0x40, 0x77, 0x7C, 0x39, 0x5E, 0x79, 0x71,
 	};
 	static unsigned char size = sizeof(led) / sizeof(*led);
-	int t = *time;
+	unsigned long t = *time;
 
 	send_data(~led[digit]);
 	PORTD &= ~(1 << (4 + pos));
