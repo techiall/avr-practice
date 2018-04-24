@@ -10,72 +10,41 @@ imakew -f FIRST.mak
 #include "init_avr.h"
 
 unsigned long time = 0;
-long num = 0;
-unsigned char MASK = 0;
-unsigned char mask = (3 << 2 * 2);
-
 #pragma interrupt_handler timer0_comp_isr:iv_TIM0_COMP
 void timer0_comp_isr(void)
 {
 	time++;
-
-	if (time >= TIME_1S / 2) {
-			MASK = mask == MASK ? 0 : mask;
-		}
-	if (time >= TIME_1S) {
-		if (mask == (3 << 2 * 2))
-			num++;
-		time = 0;
-	}
-
-	if (num % 100 >= 60)
-		num += 40;
-	num %= 6000;
-
+	ADCSRA |= (1 << ADSC);
+	while (!(ADCSRA & (1 << ADIF)));
+	ADCSRA |= (1 << ADIF);
 }
 
-int _1(void *first, void *last)
+void adc_init(void)
 {
-	long *num = first;
-	unsigned char *x = last;
-	if (*x == 3) {
-		++*num;
-		*num = *num / 100 * 100 + *num % 100 % 60;
-	} else if (*x == (3 << 2)) {
-		*num += 100;
-		*num = *num / 100 % 60 * 100 + *num % 100;
-	}
-	return 0;
+	ADMUX = 0x47;
+	ADCSR = 0x87;
 }
 
-int mask_move(void *first, void *last)
+unsigned long get_v()
 {
-	unsigned char *x = last;
-	*x <<= 2;
-	if (*x == (3 << (2 + 1) * 2))
-		*x = 3;
-	return 0;
+	return (unsigned long)ADC * 3300 / 1024;
 }
 
 int main(void)
 {
-	int i;
-	struct key key[2];
-	unsigned char key_num = sizeof(key) / sizeof(*key);
-	key[0] = key_init(&PINA, 0x80, ~(1 << 7), 0, 0, mask_move, 0, mask_move);
-	key[1] = key_init(&PIND, 0x08, ~(1 << 3), 0, 0, _1, 0, _1);
-
+	static char value[] = {1, 2, 4, 3, 5};
+	const unsigned long MAX_V = 3000;
+	unsigned char size = sizeof(value) / sizeof(*value);
+	unsigned long v = get_v();
+	unsigned long i = 0, j = 0;
 	init();
-	while(1) {
-		display_number(num, 4, mask ^ MASK, &time);
-		for (i = 0; i < key_num; i++) {
-			if (key_is_down(key[i])) {
-				key[i] = key_state_move(key[i], &time);
-				key_operate(key[i], &num, &mask);
-			}
-			 display_number(num, 4, mask ^ MASK, &time);
-		}
+	adc_init();
+	while (1) {
+		v = get_v();
+		for (int i = 0; i < size; i++)
+			if (abs(MAX_V / (i * 1.0 / (i + 3.0)) - v) < 100)
+				j = i;
+		display_number(value[j], 4, 0, &time);
 	}
-
 	return 0;
 }
