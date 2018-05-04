@@ -3,48 +3,37 @@ imakew -f FIRST.mak
 */
 #include <iom16v.h>
 #include <macros.h>
-#include <math.h>
-#include "define.h"
-#include "led_send_display.h"
-#include "key.h"
 #include "init_avr.h"
+#include "lcd.h"
+#include "char_ascii.h"
 
-unsigned long time = 0;
 #pragma interrupt_handler timer0_comp_isr:iv_TIM0_COMP
 void timer0_comp_isr(void)
-{
-	time++;
-	ADCSRA |= (1 << ADSC);
-	while (!(ADCSRA & (1 << ADIF)));
-	ADCSRA |= (1 << ADIF);
-}
+{}
 
-void adc_init(void)
-{
-	ADMUX = 0x47;
-	ADCSR = 0x87;
-}
 
-unsigned long get_v()
+void display_chinese_string(struct CHINESE_ASCII c[], const unsigned long len)
 {
-	return (unsigned long)ADC * 3300 / 1024;
+	unsigned char i;
+	for (i = 0; i < len; i++) 
+		lcd_display_chinese_char(12 * i, 0, c[i].data);
 }
 
 int main(void)
 {
-	static char value[] = {1, 2, 4, 3, 5};
-	const unsigned long MAX_V = 3000;
-	unsigned char size = sizeof(value) / sizeof(*value);
-	unsigned long v = get_v();
-	unsigned long i = 0, j = 0;
+	char str[][23] = {
+		"",
+		"3310LCD test!",
+		"",
+		"1  3310LCD Init",
+		"“2  3310 write",
+		"3  3310 display"
+	};
+	int size = sizeof(str) / sizeof(*str);
+	int i;
 	init();
-	adc_init();
-	while (1) {
-		v = get_v();
-		for (int i = 0; i < size; i++)
-			if (abs(MAX_V / (i * 1.0 / (i + 3.0)) - v) < 100)
-				j = i;
-		display_number(value[j], 4, 0, &time);
-	}
+	lcd_init();
+	for (i = 0; i < size; i++)
+		lcd_display_english_string(0, i, str[i]);
 	return 0;
 }
