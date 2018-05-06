@@ -14,22 +14,22 @@ extern const unsigned char AVR_bmp[];
 
 extern void lcd_init(void);
 
-extern void lcd_clear(unsigned char data);
+extern void lcd_clear(const unsigned char data);
 
-extern void lcd_set_position(unsigned char begin_row, unsigned char begin_clo);
+extern void lcd_set_position(const unsigned char begin_row, const unsigned char begin_clo);
 
-extern void lcd_display_byte(unsigned char data, unsigned char command);
+extern void lcd_display_byte(const unsigned char data, const unsigned char command);
 
-extern void lcd_display_ascii_char(unsigned char c);
+extern void lcd_display_ascii_char(const unsigned char c);
 
-extern void lcd_display_english_string(unsigned char begin_row, unsigned char begin_col,
+extern void lcd_display_english_string(const unsigned char begin_row, const unsigned char begin_col,
                                        char *str);
 
-extern void lcd_display_chinese_char(unsigned char row, unsigned char col,
-                                     unsigned char *str);
+extern void lcd_display_chinese_char(const unsigned char row, const unsigned char col,
+                                     const unsigned char *str);
 
-extern void lcd_draw_bmp_pixel(unsigned char begin_row,
-                               unsigned char begin_col,
-                               unsigned char *map,
-                               unsigned char pix_long, unsigned char pix_hight);
+extern void lcd_draw_bmp_pixel(const unsigned char begin_row,
+                               const unsigned char begin_col,
+                               const unsigned char *map,
+                               const unsigned char pix_long, const unsigned char pix_hight);
 #endif /* _LCD_H_ */

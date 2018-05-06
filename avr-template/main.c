@@ -12,7 +12,7 @@ void timer0_comp_isr(void)
 {}
 
 
-void display_chinese_string(struct CHINESE_ASCII c[], const unsigned long len)
+void display_chinese_string(const struct CHINESE_ASCII c[], const unsigned long len)
 {
 	unsigned char i;
 	for (i = 0; i < len; i++) 
@@ -26,13 +26,14 @@ int main(void)
 		"3310LCD test!",
 		"",
 		"1  3310LCD Init",
-		"“2  3310 write",
+		"2  3310 write",
 		"3  3310 display"
 	};
 	int size = sizeof(str) / sizeof(*str);
 	int i;
 	init();
 	lcd_init();
+	display_chinese_string(chinese, 5);
 	for (i = 0; i < size; i++)
 		lcd_display_english_string(0, i, str[i]);
 	return 0;

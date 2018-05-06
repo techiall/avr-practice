@@ -18,13 +18,13 @@ void lcd_init(void)
 	PORTA |= LCD_CE;
 }
 
-void lcd_set_position(unsigned char begin_row, unsigned char begin_clo)
+void lcd_set_position(const unsigned char begin_row, const unsigned char begin_clo)
 {
 	lcd_display_byte(0x40 | begin_clo, 0);
 	lcd_display_byte(0x80 | begin_row, 0);
 }
 
-void lcd_display_byte(unsigned char data, unsigned char command)
+void lcd_display_byte(const unsigned char data, const unsigned char command)
 {
 	PORTA &= ~LCD_CE;
 	PORTA = command ? PORTA | LCD_DC : PORTA & ~LCD_DC;
@@ -33,7 +33,7 @@ void lcd_display_byte(unsigned char data, unsigned char command)
 	PORTA |= LCD_CE;
 }
 
-void lcd_clear(unsigned char data)
+void lcd_clear(const unsigned char data)
 {
 	unsigned int i;
 	lcd_display_byte(0x0C, 0);
@@ -43,14 +43,14 @@ void lcd_clear(unsigned char data)
 		lcd_display_byte(data, 1);
 }
 
-void lcd_display_ascii_char(unsigned char c)
+void lcd_display_ascii_char(const unsigned char c)
 {
 	unsigned char i;
 	for (i = 0; i < 6; i++)
 		lcd_display_byte(ascii_table[c - 32][i], 1);
 }
 
-void lcd_display_english_string(unsigned char begin_row, unsigned char begin_clo,
+void lcd_display_english_string(const unsigned char begin_row, const unsigned char begin_clo,
                                 char *str)
 {
 	lcd_set_position(begin_row, begin_clo);
@@ -58,8 +58,8 @@ void lcd_display_english_string(unsigned char begin_row, unsigned char begin_clo
 		lcd_display_ascii_char(*str++);
 }
 
-void lcd_display_chinese_char(unsigned char row, unsigned char col,
-                              unsigned char *str)
+void lcd_display_chinese_char(const unsigned char row, const unsigned char col,
+                              const unsigned char *str)
 {
 	unsigned char i, j;
 	for (i = 0; i < 2; i++) {
@@ -70,10 +70,10 @@ void lcd_display_chinese_char(unsigned char row, unsigned char col,
 	}
 }
 
-void lcd_draw_bmp_pixel(unsigned char begin_row,
-                        unsigned char begin_col,
-                        unsigned char *map,
-                        unsigned char pix_long, unsigned char pix_hight)
+void lcd_draw_bmp_pixel(const unsigned char begin_row,
+                        const unsigned char begin_col,
+                        const unsigned char *map,
+                        const unsigned char pix_long, const unsigned char pix_hight)
 {
 	unsigned int i, j;
 	unsigned char tmp = pix_long / 8 + (!!(pix_long % 8));
