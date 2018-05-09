@@ -50,7 +50,7 @@ void lcd_display_ascii_char(const unsigned char c)
 		lcd_display_byte(ascii_table[c - 32][i], 1);
 }
 
-void lcd_display_english_string(const unsigned char begin_row, const unsigned char begin_clo,
+void lcd_display_string(const unsigned char begin_row, const unsigned char begin_clo,
                                 char *str)
 {
 	lcd_set_position(begin_row, begin_clo);
@@ -78,7 +78,7 @@ void lcd_draw_bmp_pixel(const unsigned char begin_row,
 	unsigned int i, j;
 	unsigned char tmp = pix_long / 8 + (!!(pix_long % 8));
 	for (i = 0; i < tmp; i++) {
-		lcd_set_position(begin_row, begin_col++);
+		lcd_set_position(begin_row, begin_col + 1);
 		for (j = 0; j < pix_hight; j++) {
 			lcd_display_byte(map[i * pix_long + j], 1);
 		}

@@ -1,40 +1,63 @@
 /*
-imakew -f FIRST.mak
-*/
+   imakew -f FIRST.mak
+   */
+
 #include <iom16v.h>
 #include <macros.h>
 #include "init_avr.h"
-#include "lcd.h"
-#include "char_ascii.h"
+#include "ku.h"
+#include "led_send_display.h"
 
+unsigned long time = 0;
 #pragma interrupt_handler timer0_comp_isr:iv_TIM0_COMP
 void timer0_comp_isr(void)
-{}
-
-
-void display_chinese_string(const struct CHINESE_ASCII c[], const unsigned long len)
 {
-	unsigned char i;
-	for (i = 0; i < len; i++) 
-		lcd_display_chinese_char(12 * i, 0, c[i].data);
+	time++;
+}
+#define COLUMNS 16
+#define CH_COUNT 17
+
+void send_ch(int col, int begin, int offset)
+{
+	int i;
+	for (i = 4; i >= 0; i--) {
+		unsigned char left = 0, right = 0;
+		int ch_idx = (begin + i);
+
+		if (ch_idx >= 0 && ch_idx < CH_COUNT) {
+			right = ch[ch_idx][col * 2 + 1];
+			left = ch[ch_idx][col * 2];
+		}
+
+		send_data(right, i == 0 && offset > 8 ? offset - 8 : 0);
+		send_data(left, (i == 0) * offset);
+	}
+
+	while (time % 4) {}
+	PORTD = COLUMNS - 1 - col;
 }
 
 int main(void)
 {
-	char str[][23] = {
-		"",
-		"3310LCD test!",
-		"",
-		"1  3310LCD Init",
-		"2  3310 write",
-		"3  3310 display"
-	};
-	int size = sizeof(str) / sizeof(*str);
-	int i;
+	int cnt = -4;
+	int tmp = 0;
+	int offset = 0;
 	init();
-	lcd_init();
-	display_chinese_string(chinese, 5);
-	for (i = 0; i < size; i++)
-		lcd_display_english_string(0, i, str[i]);
+	while (1) {
+		int i, j;
+		for (i = 0; i < COLUMNS; i++) {
+			send_ch(i, cnt, offset);
+		}
+
+		if (time > 100) {
+			if (++offset == 16) {
+				offset = 0;
+				if (++cnt == CH_COUNT)
+					cnt = -4;
+			}
+			time = 0;
+		}
+
+	}
 	return 0;
 }
