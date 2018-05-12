@@ -17,9 +17,12 @@
 
 #define SEND() CLR_STCLK(); SET_STCLK()
 
-void send_data(unsigned char data, int skip)
+void send_data(unsigned char data, int col, int skip)
 {
 	int i;
+
+	OE_H();
+	PORTD = col;
 	for (i = 0; i < 8 - skip; i++) {
 		if (data & (1 << (7 - i))) {
 			SET_DS();
@@ -30,6 +33,7 @@ void send_data(unsigned char data, int skip)
 		SET_SHCLK();
 	}
 	SEND();
+	OE_L();
 }
 
 
@@ -43,7 +47,7 @@ void display_digit(char pos, char digit, unsigned long *time)
 	static int size = sizeof(led) / sizeof(*led);
 	unsigned long t = *time;
 
-	send_data(~led[digit], 0);
+	//send_data(~led[digit], 0);
 	PORTD &= ~(1 << (4 + pos));
 	while (t == *time);
 	PORTD |= (1 << (4 + pos));
