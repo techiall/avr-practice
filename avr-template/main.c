@@ -16,72 +16,94 @@ void timer0_comp_isr(void)
 }
 
 #define COLUMNS 16
-#define CH_COUNT 17
+#define CH_COUNT 11
 
-void send_ch(const unsigned char *first, const unsigned char *last, int len,
-             int begin, int end, int col, int offset)
+unsigned char light[16][8];
+
+void send_ch(int col, int begin, int offset, const unsigned char *first[])
 {
-	const unsigned char *it = first + begin * len,
-	                     *it_end = first + end * len;
-
-	if (len < 0) {
-		len = -len;
-		it = first + end * len - len;
-		it_end = first + begin * len - len;
-		len = -len;
-	}
-
-	for (; it != it_end; it += len) {
+	int i;
+	for (i = 4; i >= 0; i++) {
 		unsigned char left = 0, right = 0;
-		int left_skip = 0, right_skip = 0;
-
-		if (it >= first && it < last) {
-			right = *(it + col * 2 + 1);
-			left = *(it + col * 2);
+		int ch_idx = begin + i;
+		if (ch_idx >= 0 && ch_idx < CH_COUNT) {
+			right = *(first[i] + col * 2 + 1); 
+			left = *(first[i] + col * 2);
 		}
-
-		if (it + len == it_end) {
-			int half = COLUMNS >> 1;
-			if (len < 0) {
-				left_skip = offset;
-				if (offset > half)
-					right_skip = offset - half;
-			} else {
-				left_skip = COLUMNS - offset;
-				if (offset < half)
-					right_skip = half - offset;
-			}
-		}
-
-		send_data(right, COLUMNS - 1 - col, right_skip);
-		send_data(left, COLUMNS - 1 - col, left_skip);
+		send_data(right, i == 0 && offset > 8 ? offset - 8 : 0, 0);
+		send_data(left, (i == 0) * offset, 0);
 	}
 	while (time % 4) {}
+	PORTD = COLUMNS - 1 - col;
 }
+
+void display_light(void)
+{
+	int i, j;
+	for (i = 0; i < 16; i++) {
+		for (j = 7; j >= 0; j--) {
+			send_data(light[i][j], COLUMNS - 1 - i, 0);
+		}
+		while (time % 5) {}
+	}
+}
+
+void set_point(int row, int col, int open)
+{
+	if (open == 0)
+		light[row][col / 8] &= ~(1 << (col % 8));
+	else if (open == 1)
+		light[row][col / 8] |= 1 << (col % 8);
+	else if (open == 2)
+		light[row][col / 8] ^= 1 << (col % 8);
+}
+
+int get_point(int row, int col)
+{
+	return light[row][col / 8] & (1 << (col % 8));
+}
+
 
 int main(void)
 {
-	int cnt = -4;
-	int tmp = 0;
+	int cnt = 4;
 	int offset = 0;
+	unsigned long num = 1212;
 	init();
 	while (1) {
-		int i;
-		const unsigned char *first = (const unsigned char *)ch,
-		                     *last = (const unsigned char *)(ch + CH_COUNT);
-		for (i = 0; i < COLUMNS; i++) {
-			send_ch(first, last, -32, cnt, cnt + 5, i, offset);
-			//send_ch(first, last, 32, cnt, cnt + 5, i, offset);
+		int i, j;
+		unsigned char const *arr[11] = {0};
+		
+		for (i = 0; i < 4; i++) {
+			arr[i] = &ch[11 + i][0];
 		}
-		if (time > 10) {
-			if (++offset == 16) {
+		for (i = 6; i < 11; i++, num /= 10) {
+			arr[6 + i] = &ch[num % 10][0];
+		}
+
+		for (i = 0; i < 10; i++)
+			arr[i] = &ch[i][0];
+		for (i = 0; i < COLUMNS; i++) {
+			for (j = 4; j >= 0; j--) {
+				send_data(*(arr[cnt + j] + 2 * i + 1), COLUMNS - 1 - i, j == 0 && offset > 8 ? offset - 8 : 0); 
+				send_data(*(arr[cnt + j] + 2 * i), COLUMNS - 1 - i, (j == 0) * offset); 
+			}
+			while (time % 4) {}
+		}
+		
+		if (time >= 100) {
+			time = 0;
+			if (++num % 100 >= 60) {
+				num += 40;
+				num %= 6000;
+			}
+			if (++offset >= 16) {
 				offset = 0;
 				if (++cnt == CH_COUNT)
-					cnt = -4;
+					cnt = 4;
 			}
-			time = 0;
 		}
-	}
 
+	}
 	return 0;
 }

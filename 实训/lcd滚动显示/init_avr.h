@@ -6,7 +6,7 @@ void port_init(void)
 	PORTA = 0x00;
 	DDRA  = 0x00;
 
-	PORTB = 0x0f;
+	PORTB = 0x00;
 	DDRB  = 0x00;
 
 	PORTC = 0x00;
@@ -15,7 +15,6 @@ void port_init(void)
 	PORTD = 0x00;
 	DDRD  = 0x0F;
 }
-
 void uart0_init(void)
 {
 	UCSRB = 0x00;
