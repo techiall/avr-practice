@@ -18,13 +18,13 @@ struct key {
 };
 
 struct key key_init(volatile unsigned char *block,
-		unsigned char scope,
-		unsigned char down_state,
-		int (*is_down)(void),
-		int (*none_operate)(void *first, void *last),
-		int (*down_operate)(void *first, void *last),
-		int (*press_operate)(void *first, void *last),
-		int (*long_press_operate)(void *first, void *last))
+                    unsigned char scope,
+                    unsigned char down_state,
+                    int (*is_down)(void),
+                    int (*none_operate)(void *first, void *last),
+                    int (*down_operate)(void *first, void *last),
+                    int (*press_operate)(void *first, void *last),
+                    int (*long_press_operate)(void *first, void *last))
 {
 	struct key res;
 

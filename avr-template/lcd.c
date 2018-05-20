@@ -51,7 +51,7 @@ void lcd_display_ascii_char(const unsigned char c)
 }
 
 void lcd_display_string(const unsigned char begin_row, const unsigned char begin_clo,
-                                char *str)
+                        char *str)
 {
 	lcd_set_position(begin_row, begin_clo);
 	while (*str)

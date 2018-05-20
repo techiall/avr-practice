@@ -23,7 +23,7 @@ extern void lcd_display_byte(const unsigned char data, const unsigned char comma
 extern void lcd_display_ascii_char(const unsigned char c);
 
 extern void lcd_display_string(const unsigned char begin_row, const unsigned char begin_col,
-                                       char *str);
+                               char *str);
 
 extern void lcd_display_chinese_char(const unsigned char row, const unsigned char col,
                                      const unsigned char *str);

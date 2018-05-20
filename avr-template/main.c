@@ -27,7 +27,7 @@ void send_ch(int col, int begin, int offset, const unsigned char *first[])
 		unsigned char left = 0, right = 0;
 		int ch_idx = begin + i;
 		if (ch_idx >= 0 && ch_idx < CH_COUNT) {
-			right = *(first[i] + col * 2 + 1); 
+			right = *(first[i] + col * 2 + 1);
 			left = *(first[i] + col * 2);
 		}
 		send_data(right, i == 0 && offset > 8 ? offset - 8 : 0, 0);
@@ -73,7 +73,7 @@ int main(void)
 	while (1) {
 		int i, j;
 		unsigned char const *arr[11] = {0};
-		
+
 		for (i = 0; i < 4; i++) {
 			arr[i] = &ch[11 + i][0];
 		}
@@ -85,12 +85,12 @@ int main(void)
 			arr[i] = &ch[i][0];
 		for (i = 0; i < COLUMNS; i++) {
 			for (j = 4; j >= 0; j--) {
-				send_data(*(arr[cnt + j] + 2 * i + 1), COLUMNS - 1 - i, j == 0 && offset > 8 ? offset - 8 : 0); 
-				send_data(*(arr[cnt + j] + 2 * i), COLUMNS - 1 - i, (j == 0) * offset); 
+				send_data(*(arr[cnt + j] + 2 * i + 1), COLUMNS - 1 - i, j == 0 && offset > 8 ? offset - 8 : 0);
+				send_data(*(arr[cnt + j] + 2 * i), COLUMNS - 1 - i, (j == 0) * offset);
 			}
 			while (time % 4) {}
 		}
-		
+
 		if (time >= 100) {
 			time = 0;
 			if (++num % 100 >= 60) {

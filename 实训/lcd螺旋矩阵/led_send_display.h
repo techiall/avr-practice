@@ -54,7 +54,7 @@ void display_digit(char pos, char digit, unsigned long *time)
 }
 
 void display_number(long number, int digit,
-		int mask, unsigned long *time)
+                    int mask, unsigned long *time)
 {
 	int i;
 	if (number < 0) {
